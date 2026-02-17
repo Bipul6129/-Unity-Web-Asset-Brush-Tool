@@ -1,13 +1,14 @@
 using UnityEngine;
 using System.Runtime.InteropServices;
-using System.Threading.Tasks; // Required for Async
-using GLTFast; //
+using System.Threading.Tasks;
+using GLTFast;
 
 public class CustomAssetImporter : MonoBehaviour
 {
     [Header("Dependencies")]
     public AssetPainter painter;
 
+    // Links to the JavaScript WebGL plugin (.jslib) to open the browser's native file dialog
     [DllImport("__Internal")]
     private static extern void OpenBrowserFilePicker();
 
@@ -20,6 +21,7 @@ public class CustomAssetImporter : MonoBehaviour
         #endif
     }
 
+    // Triggered externally by the browser via SendMessage() once a user selects a file
     public async void OnFileSelected(string data)
     {
         string[] parts = data.Split('|');
@@ -31,18 +33,14 @@ public class CustomAssetImporter : MonoBehaviour
 
     private async Task LoadAndImportGLB(string url, string fileName)
     {
-        // 1. Create a GltfImport instance
         var gltf = new GltfImport(); 
-
-        // 2. Load the asset from the URL
         bool success = await gltf.Load(url); 
 
         if (success)
         {
-            // 3. Create a parent container for the new asset
+            // Create a clean root container named after the file to keep the hierarchy organized
             GameObject importedRoot = new GameObject(fileName.Replace(".glb", ""));
             
-            // 4. Instantiate the main scene
             bool instSuccess = await gltf.InstantiateMainSceneAsync(importedRoot.transform);
 
             if (instSuccess && painter != null)

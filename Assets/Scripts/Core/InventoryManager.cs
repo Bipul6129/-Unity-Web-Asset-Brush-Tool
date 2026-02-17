@@ -14,7 +14,7 @@ public class InventoryManager : MonoBehaviour
 
     private Camera photoCamera;
     
-    // NEW: Keep track of all the button outlines for the Highlight System
+    // Tracks button outlines for the UI highlight system
     private List<Outline> buttonOutlines = new List<Outline>(); 
 
     private Camera GetOrCreatePhotoCamera()
@@ -44,14 +44,13 @@ public class InventoryManager : MonoBehaviour
     {
         Camera pCam = GetOrCreatePhotoCamera();
 
-        // --- 1. THE CLONE FIX ---
-        // Spawn a temporary physical clone of the model just for the photoshoot!
+        // Spawn a temporary physical clone of the model for the photoshoot
         GameObject tempModel = Instantiate(model);
         tempModel.transform.position = new Vector3(0, -1000, 0);
         tempModel.transform.rotation = Quaternion.Euler(15f, -45f, 0f); 
         tempModel.SetActive(true); 
 
-        // --- 📸 THE AUTO-FRAMING FIX 📸 ---
+        // Auto-frame the camera to fit the model's bounds
         Renderer[] renderers = tempModel.GetComponentsInChildren<Renderer>();
         if (renderers.Length > 0)
         {
@@ -61,7 +60,7 @@ public class InventoryManager : MonoBehaviour
             pCam.transform.position = new Vector3(bounds.center.x, bounds.center.y, bounds.center.z - 5f);
             
             float maxExtent = Mathf.Max(bounds.extents.x, bounds.extents.y, bounds.extents.z);
-            // Give it a minimum size so it doesn't zoom in too close on simple shapes like cubes
+            // Establish a minimum size so it doesn't zoom in too close on simple shapes like cubes
             if (maxExtent < 0.5f) maxExtent = 0.5f; 
             pCam.orthographicSize = maxExtent * 1.2f; 
         }
@@ -80,8 +79,7 @@ public class InventoryManager : MonoBehaviour
         RenderTexture.active = null;
         Destroy(rt);
         
-        // --- 2. CLEANUP ---
-        // Destroy the temporary clone so it doesn't clutter up our game
+        // Destroy the temporary clone after the picture is taken
         Destroy(tempModel);
 
         return Sprite.Create(tex, new Rect(0, 0, 256, 256), new Vector2(0.5f, 0.5f));
@@ -110,7 +108,7 @@ public class InventoryManager : MonoBehaviour
         GameObject newBtnObj = Instantiate(inventoryButtonPrefab, inventoryPanel);
         newBtnObj.SetActive(true);
 
-        // Add a hidden yellow outline for the Highlight System
+        // Add a disabled outline component for the selection highlight system
         Outline outline = newBtnObj.AddComponent<Outline>();
         outline.effectColor = Color.yellow;
         outline.effectDistance = new Vector2(4, -4);
@@ -132,21 +130,20 @@ public class InventoryManager : MonoBehaviour
             });
         }
 
-        // --- 🖼️ THE UI DISPLAY FIX 🖼️ ---
         if (modelToPhotograph != null)
         {
             Sprite snapshot = TakeSnapshot(modelToPhotograph);
             if (snapshot != null)
             {
-                // Create a brand new UI Image object INSIDE the button
+                // Create a new UI Image object inside the button hierarchy
                 GameObject iconObj = new GameObject("IconImage");
                 iconObj.transform.SetParent(newBtnObj.transform, false);
                 
                 Image iconImage = iconObj.AddComponent<Image>();
                 iconImage.sprite = snapshot;
-                iconImage.preserveAspect = true; // Never stretch!
+                iconImage.preserveAspect = true; 
                 
-                // Set the size to fill the button with a little padding (0.1 = 10% gap)
+                // Set the size to fill the button with a 10% padding gap
                 RectTransform iconRect = iconObj.GetComponent<RectTransform>();
                 iconRect.anchorMin = new Vector2(0.1f, 0.1f);
                 iconRect.anchorMax = new Vector2(0.9f, 0.9f);
@@ -154,7 +151,6 @@ public class InventoryManager : MonoBehaviour
                 iconRect.offsetMax = Vector2.zero;
             }
         }
-        // ---------------------------------
         
         if (myIndex > 0) HighlightButton(myIndex);
     }

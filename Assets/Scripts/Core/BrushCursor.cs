@@ -6,7 +6,7 @@ public class BrushCursor : MonoBehaviour
     public enum BrushMode { Paint, Erase }
     
     [Header("Dependencies")]
-    public AssetPainter painter; // Link your new script here!
+    public AssetPainter painter; 
 
     [Header("Tool State")]
     public BrushMode currentMode = BrushMode.Paint;
@@ -33,16 +33,14 @@ public class BrushCursor : MonoBehaviour
     private MeshFilter brushMeshFilter;
     private MeshRenderer brushRenderer;
     private Mesh brushMesh;
-    // Tracks the size and position of our settings box so we don't paint through it!
-    // Now 420 pixels wide and 460 pixels tall!
-    // Increased height to 510 to fit the new Opacity slider!
-    // Increased the height to 550 so the text at the bottom has plenty of room!
+
+    // Defines the OnGUI settings panel area to prevent raycast clicks through the UI
     private Rect settingsPanelRect = new Rect(20, 20, 420, 550);
 
     void Start()
     {
         if (mainCamera == null) mainCamera = Camera.main;
-        if (painter == null) painter = GetComponent<AssetPainter>(); // Auto-grab if on same object
+        if (painter == null) painter = GetComponent<AssetPainter>();
 
         CreateBrushVisual();
     }
@@ -87,13 +85,13 @@ public class BrushCursor : MonoBehaviour
             UpdateBrushColor();
         }
 
-        // NEW: Let the user swap brushes with number keys!
+        // Quick slot selection
         if (painter != null)
         {
             if (Input.GetKeyDown(KeyCode.Alpha1)) painter.SetActiveBrush(0);
             if (Input.GetKeyDown(KeyCode.Alpha2)) painter.SetActiveBrush(1);
             if (Input.GetKeyDown(KeyCode.Alpha3)) painter.SetActiveBrush(2);
-            if (Input.GetKeyDown(KeyCode.Alpha4)) painter.SetActiveBrush(3); // In case they upload a bunch!
+            if (Input.GetKeyDown(KeyCode.Alpha4)) painter.SetActiveBrush(3); 
         }
 
         brushSize = Mathf.Clamp(brushSize, minBrushSize, maxBrushSize);
@@ -112,15 +110,15 @@ public class BrushCursor : MonoBehaviour
 
     void HandleMouseClick()
     {
-        // 1. The Canvas UI Shield (For your hotbar)
+        // UI Shield 1: Prevent painting through Canvas UI elements (like the hotbar)
         if (EventSystem.current != null && EventSystem.current.IsPointerOverGameObject())
         {
             if (painter != null) painter.ResetTimer();
             return; 
         }
 
-        // 2. NEW: The OnGUI Shield (For our new sliders)
-        // We have to flip the Y mouse position because OnGUI counts from the top-down, but the mouse counts from the bottom-up!
+        // UI Shield 2: Prevent painting through the OnGUI settings panel
+        // Note: Mouse Y is inverted because OnGUI origin is top-left, but Input.mousePosition origin is bottom-left.
         Vector2 invertedMousePos = new Vector2(Input.mousePosition.x, Screen.height - Input.mousePosition.y);
         if (settingsPanelRect.Contains(invertedMousePos))
         {
@@ -128,7 +126,7 @@ public class BrushCursor : MonoBehaviour
             return;
         }
 
-        // ... Keep your existing paint/erase code down here ...
+        // Execute Paint/Erase operations
         if (isHittingTerrain && Input.GetMouseButton(0) && !Input.GetMouseButton(1) && painter != null)
         {
             if (currentMode == BrushMode.Paint) painter.TryPaint(hitPoint, brushSize);
@@ -238,7 +236,6 @@ public class BrushCursor : MonoBehaviour
         GUI.Label(new Rect(30, 60, 380, 35), $"Current Mode: {modeText} (Press TAB)", textStyle);
         GUI.Label(new Rect(30, 100, 380, 35), $"Size: {brushSize:F1} (Use [ and ] keys)", textStyle);
 
-        // 🎚️ WIDENED LABELS (190 width) AND MOVED SLIDERS RIGHT (Start at 220)
         GUI.Label(new Rect(30, 150, 190, 35), $"Opacity: {Mathf.RoundToInt(brushOpacity * 100)}%", textStyle);
         brushOpacity = GUI.HorizontalSlider(new Rect(220, 160, 170, 30), brushOpacity, 0.1f, 1f);
         
@@ -262,7 +259,7 @@ public class BrushCursor : MonoBehaviour
             GUI.Label(new Rect(30, 450, 380, 35), $"<color=yellow>Active Set: {painter.GetActiveBrushName()}</color>", textStyle);
         }
 
-        // --- TOP RIGHT CONTROLS PANEL ---
+        // Controls & Hotkeys Panel
         Rect controlsRect = new Rect(Screen.width - 340, 20, 320, 260);
         GUI.Box(controlsRect, "Controls & Hotkeys", boxStyle);
 

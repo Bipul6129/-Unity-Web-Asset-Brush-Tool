@@ -8,7 +8,7 @@ public class FlyCameraController : MonoBehaviour
     public float baseSpeed = 8f;
     public float shiftMultiplier = 3f;
     
-    // --- NEW: How close to the dirt the camera is allowed to get ---
+    // Minimum vertical distance maintained above the terrain surface
     public float groundClearance = 1f; 
 
     float yaw;
@@ -61,30 +61,24 @@ public class FlyCameraController : MonoBehaviour
             transform.forward * v +
             Vector3.up * up;
 
-        // 1. Calculate where the camera WANTS to go based on your keyboard inputs
+        // Calculate intended movement position before terrain verification
         Vector3 targetPosition = transform.position + move.normalized * speed * Time.deltaTime;
 
-        // --- 🛡️ NEW: THE TERRAIN SHIELD 🛡️ ---
-        
-        float minimumHeight = 0f; // Rule 1: Never go below absolute Y = 0
+        // Enforce height constraints to prevent the camera from clipping into the terrain
+        float minimumHeight = 0f; 
 
         if (Terrain.activeTerrain != null)
         {
-            // Rule 2: Find out exactly how high the mountain is directly below the camera
             float terrainHeight = Terrain.activeTerrain.SampleHeight(targetPosition) + Terrain.activeTerrain.transform.position.y;
-            
-            // Pick whichever limit is higher: 0, or the mountain peak + 1 meter of breathing room
             minimumHeight = Mathf.Max(minimumHeight, terrainHeight + groundClearance);
         }
 
-        // If the camera tries to sink below the shield, push it back up!
+        // Clamp the Y position if the camera attempts to move below the terrain boundary
         if (targetPosition.y < minimumHeight)
         {
             targetPosition.y = minimumHeight;
         }
-        // -------------------------------------
 
-        // 2. Finally, move the camera to the safe, verified position!
         transform.position = targetPosition;
     }
 }

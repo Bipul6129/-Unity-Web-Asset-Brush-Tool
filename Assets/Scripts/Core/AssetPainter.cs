@@ -27,7 +27,7 @@ public class AssetPainter : MonoBehaviour
     [Range(0f, 90f)] public float maxTiltAngle = 10f;
 
     [Header("Dependencies")]
-    public InventoryManager inventoryManager; // Link to the UI boss!
+    public InventoryManager inventoryManager; 
 
     private Transform assetContainer;
     private float actionTimer = 0f;
@@ -62,7 +62,7 @@ public class AssetPainter : MonoBehaviour
         return brushCategories[activeBrushIndex].setName;
     }
 
-    // --- NEW: Forces every single piece of the 3D model onto our specific layer ---
+    // Recursively apply the target layer to the parent and all child meshes
     private void SetLayerRecursively(GameObject obj, int newLayer)
     {
         if (obj == null) return;
@@ -83,18 +83,17 @@ public class AssetPainter : MonoBehaviour
         GameObject[] currentPrefabs = brushCategories[activeBrushIndex].prefabs;
         if (currentPrefabs == null || currentPrefabs.Length == 0) return;
 
-        // --- 100% PERFECT PACKING MODE ---
+        // Grid-based perfect packing for 100% fill density
         if (fillPercentage >= 99.5f)
         {
-            // We use a minimum step of 0.25f so the web browser doesn't freeze if Spacing is 0!
+            // Minimum step of 0.25f prevents infinite loops/browser freezes if spacing is 0
             float step = Mathf.Max(minSpacing, 0.25f); 
             
-            // Scan a mathematical grid over the entire brush circle
             for (float x = -radius; x <= radius; x += step)
             {
                 for (float z = -radius; z <= radius; z += step)
                 {
-                    // Check if this specific grid point is inside the brush circle
+                    // Verify the grid coordinate is within the circular brush radius
                     if (x * x + z * z <= radius * radius) 
                     {
                         Vector3 spawnPos = new Vector3(center.x + x, 0, center.z + z);
@@ -103,10 +102,9 @@ public class AssetPainter : MonoBehaviour
                 }
             }
         }
-        // --- RANDOM SCATTER MODE (< 100%) ---
+        // Random scatter method for < 100% fill density
         else 
         {
-            // Scale how many things we try to spawn based on the fill percentage
             int attempts = Mathf.RoundToInt(spawnAttemptsPerTick * (fillPercentage / 100f));
             if (attempts < 1) attempts = 1;
 
@@ -121,13 +119,12 @@ public class AssetPainter : MonoBehaviour
         actionTimer = actionRate; 
     }
 
-    // This helper function keeps our Paint function clean!
     private void AttemptPlacement(Vector3 spawnPos, GameObject[] prefabs)
     {
         if (Terrain.activeTerrain != null)
             spawnPos.y = Terrain.activeTerrain.SampleHeight(spawnPos) + Terrain.activeTerrain.transform.position.y;
 
-        // --- 🧠 NEW: SMART SPACING ---
+        // Smart Spacing: Only check for collisions against objects of the exact same brush type
         if (minSpacing > 0.01f && placedObjectsLayer != 0)
         {
             Collider[] hits = Physics.OverlapSphere(spawnPos, minSpacing, placedObjectsLayer);
@@ -136,30 +133,26 @@ public class AssetPainter : MonoBehaviour
 
             foreach (Collider col in hits)
             {
-                // Climb up the hierarchy just like the Eraser does
                 Transform rootAsset = col.transform;
                 while (rootAsset.parent != null && rootAsset.parent != assetContainer)
                 {
                     rootAsset = rootAsset.parent;
                 }
 
-                // If the object we bumped into has the exact same name, trigger the spacing block!
                 if (rootAsset != null && rootAsset.name == activeBrushName)
                 {
                     tooCloseToSameObject = true;
-                    break; // Stop checking, we already know we can't spawn here
+                    break; 
                 }
             }
 
-            // Only cancel the placement if we bumped into our own clone
             if (tooCloseToSameObject) return; 
         }
-        // -----------------------------
 
         GameObject prefabToSpawn = prefabs[Random.Range(0, prefabs.Length)];
         GameObject newAsset = Instantiate(prefabToSpawn, spawnPos, Quaternion.identity, assetContainer);
 
-        // Stamp it with the Name Tag!
+        // Assign the active brush name so the Eraser and Spacing logic can filter it later
         newAsset.name = brushCategories[activeBrushIndex].setName;
 
         newAsset.SetActive(true);
@@ -190,24 +183,22 @@ public class AssetPainter : MonoBehaviour
 
         if (brushCategories == null || brushCategories.Length == 0) return;
         
-        // Grab the name of the brush you currently have equipped in the UI
         string activeBrushName = brushCategories[activeBrushIndex].setName;
 
         Collider[] hitColliders = Physics.OverlapSphere(center, radius, placedObjectsLayer);
         foreach (Collider col in hitColliders) 
         {
-            // Climb up the hierarchy from the collider to find the root object we spawned
+            // Traverse up the hierarchy to find the root instantiated object
             Transform rootAsset = col.transform;
             while (rootAsset.parent != null && rootAsset.parent != assetContainer)
             {
                 rootAsset = rootAsset.parent;
             }
 
-            // --- 🛡️ NEW: THE FILTER ---
-            // Only attempt to delete it if its Name Tag perfectly matches your equipped brush!
+            // Filtered Erase: Only delete objects matching the currently equipped brush
             if (rootAsset != null && rootAsset.name == activeBrushName)
             {
-                // Respect the "Flow/Fill" slider so we can just "thin out" the crowd if we want to
+                // Apply the fill percentage as a deletion chance to allow thinning out areas
                 if (Random.Range(0f, 100f) <= fillPercentage)
                 {
                     Destroy(rootAsset.gameObject);
@@ -257,7 +248,6 @@ public class AssetPainter : MonoBehaviour
         int newIndex = brushCategories.Length - 1;
         activeBrushIndex = newIndex;
 
-        // Tell the UI boss to make a new button!
         if (inventoryManager != null) inventoryManager.AddNewButton(newIndex, newModel);
     }
 }
