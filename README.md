@@ -24,7 +24,7 @@ A runtime 3D level editing and scattering tool built with Unity. This applicatio
 
 ## 🚀 Play the Demo
 
-[Play the WebGL version on Itch.io here!](#https://bipul6129.itch.io/worldbrush-webgl-runtime-asset-painter)
+[Play the WebGL version on Itch.io here!](https://bipul6129.itch.io/worldbrush-webgl-runtime-asset-painter)
 
 ## 🛠️ Developer Setup & Installation
 
