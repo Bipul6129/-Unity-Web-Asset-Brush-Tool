@@ -1,4 +1,5 @@
 # 🌍 WebGL 3D Asset Painter & World Builder
+![WorldBrush Demo](media/demo.gif)
 
 A runtime 3D level editing and scattering tool built with Unity. This application allows users to procedurally paint, scale, and rotate 3D assets across a terrain directly in their web browser. It features a fully dynamic UI, smart placement logic, and the ability to import custom 3D models at runtime.
 
